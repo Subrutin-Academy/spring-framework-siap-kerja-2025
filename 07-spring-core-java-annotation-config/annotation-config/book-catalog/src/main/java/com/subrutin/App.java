@@ -32,9 +32,9 @@ public class App
 //        EmailServiceImpl emailService = (EmailServiceImpl) appContext.getBean("authServiceImpl");
 //        emailService.sendMail("destination@gmail.com", "Your OTP", "Your OTP is 12345");
         
-        ApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class);
-        AuthService authService = (AuthService) ctx.getBean("authServiceImpl");
-        authService.login("destination@gmail.com");
+//        ApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class);
+//        AuthService authService = (AuthService) ctx.getBean("authServiceImpl");
+//        authService.login("destination@gmail.com");
         
 
 

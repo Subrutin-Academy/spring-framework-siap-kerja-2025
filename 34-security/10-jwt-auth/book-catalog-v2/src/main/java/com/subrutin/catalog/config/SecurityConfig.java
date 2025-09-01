@@ -1,0 +1,136 @@
+package com.subrutin.catalog.config;
+
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.subrutin.catalog.security.filter.JwtAuthProcessingFilter;
+import com.subrutin.catalog.security.filter.UsernamePasswordAuthProcessingFilter;
+import com.subrutin.catalog.security.handler.UsernamePasswordAuthFailureHandler;
+import com.subrutin.catalog.security.handler.UsernamePasswordAuthSuccessHandler;
+import com.subrutin.catalog.security.provider.JwtAuthenticationProvider;
+import com.subrutin.catalog.security.provider.UsernamePasswordAuthProvider;
+import com.subrutin.catalog.security.util.JwtTokenFactory;
+import com.subrutin.catalog.security.util.SkipPathRequestMatcher;
+import com.subrutin.catalog.security.util.TokenExtractor;
+import com.subrutin.catalog.service.AppUserService;
+
+@EnableMethodSecurity
+@EnableWebSecurity
+@Configuration
+public class SecurityConfig {
+	
+	private final static String AUTH_URL = "/v1/login";
+	private final static String V1_URL = "/v1/**";
+	
+	private final static List<String> PERMIT_ENDPOINT_LIST = Arrays.asList(AUTH_URL
+			, "/swagger-ui.html"
+            , "/swagger-ui/index.html"
+            , "/swagger-ui/index.css"
+            , "/favicon.ico"
+            , "/swagger-ui/swagger-ui.css"
+            , "/swagger-ui/swagger-ui.css.map"
+            , "/swagger-ui/swagger-ui-standalone-preset.js"
+            , "/swagger-ui/swagger-ui-standalone-preset.js.map"
+            , "/swagger-ui/swagger-ui-bundle.js"
+            , "/swagger-ui/swagger-ui-bundle.js.map"
+            , "/swagger-ui/favicon-32x32.png"
+            , "/swagger-ui/favicon-16x16.png"
+            , "/swagger-ui/swagger-initializer.js"
+            , "/v3/api-docs/swagger-config"
+            , "/v3/api-docs");
+	private final static List<String> AUTHENTICATED_ENDPOINT_LIST = Arrays.asList(V1_URL);	
+	
+	@Autowired
+	private UsernamePasswordAuthProvider usernamePasswordAuthProvider;
+	
+	@Autowired
+	private JwtAuthenticationProvider jwtAuthenticationProvider;
+	
+	//Handler
+	@Bean
+	public AuthenticationSuccessHandler usernamePasswordAuthSuccessHandler(ObjectMapper objectMapper, 
+			JwtTokenFactory jwtTokenFactory) {
+		return new UsernamePasswordAuthSuccessHandler(objectMapper, jwtTokenFactory);
+	}
+	
+	@Bean
+	public AuthenticationFailureHandler usernamePasswordAuthFailureHandler(ObjectMapper objectMapper) {
+		return new UsernamePasswordAuthFailureHandler(objectMapper);
+	}
+
+	@Autowired
+	void registerProvider(AuthenticationManagerBuilder auth, 
+			PasswordEncoder passwordEncoder) throws Exception {
+		auth.authenticationProvider(usernamePasswordAuthProvider)
+		.authenticationProvider(jwtAuthenticationProvider);
+	}
+	
+	@Bean
+	public AuthenticationManager authenticationManager
+	(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+		return authenticationConfiguration.getAuthenticationManager();
+	}
+	
+	@Bean
+	public UsernamePasswordAuthProcessingFilter usernamePasswordAuthProcessingFilter(ObjectMapper objectMapper,
+			AuthenticationFailureHandler failureHandler, AuthenticationSuccessHandler sucessHandler,
+			AuthenticationManager manager) {
+		UsernamePasswordAuthProcessingFilter filter = new UsernamePasswordAuthProcessingFilter(
+				AUTH_URL, objectMapper, failureHandler, sucessHandler
+				);
+		filter.setAuthenticationManager(manager);
+		return filter;
+	}
+	
+	@Bean
+	public JwtAuthProcessingFilter jwtAuthProcessingFilter(TokenExtractor tokenExtractor,
+			AuthenticationFailureHandler failureHandler, AuthenticationManager manager ) {
+		SkipPathRequestMatcher macther = new SkipPathRequestMatcher(PERMIT_ENDPOINT_LIST, AUTHENTICATED_ENDPOINT_LIST);
+		JwtAuthProcessingFilter filter = 
+				new JwtAuthProcessingFilter(macther, tokenExtractor, failureHandler);
+		filter.setAuthenticationManager(manager);
+		return filter;
+	}
+	
+	
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http, UsernamePasswordAuthProcessingFilter 
+			usernamePasswordAuthProcessingFilter, JwtAuthProcessingFilter jwtAuthProcessingFilter) throws Exception {
+		http.authorizeHttpRequests(auth-> 
+			auth.requestMatchers(PERMIT_ENDPOINT_LIST.toArray(new String[0])).permitAll()
+			.requestMatchers(V1_URL).authenticated())
+			.csrf(csrf->csrf.disable())
+			.sessionManagement((sessionManagement)->
+					sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+		
+		http.addFilterBefore(usernamePasswordAuthProcessingFilter, UsernamePasswordAuthenticationFilter.class)
+		.addFilterBefore(jwtAuthProcessingFilter, UsernamePasswordAuthenticationFilter.class);
+		return http.build();
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+}

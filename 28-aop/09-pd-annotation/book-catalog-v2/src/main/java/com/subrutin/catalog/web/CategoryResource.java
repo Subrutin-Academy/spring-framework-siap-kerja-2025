@@ -1,0 +1,82 @@
+package com.subrutin.catalog.web;
+
+import java.net.URI;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.StopWatch;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.subrutin.catalog.annotation.LogThisMethod;
+import com.subrutin.catalog.dto.CategoryCreateRequestDTO;
+import com.subrutin.catalog.dto.CategoryDetailResponseDTO;
+import com.subrutin.catalog.dto.CategoryListResponseDTO;
+import com.subrutin.catalog.dto.CategoryUpdateRequestDTO;
+import com.subrutin.catalog.dto.ResultPageResponseDTO;
+import com.subrutin.catalog.service.CategoryService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/v1/categories")
+public class CategoryResource {
+	
+	private final CategoryService categoryService;
+	
+	@LogThisMethod
+	@PostMapping
+	public ResponseEntity<Void> createCategory(@RequestBody @Valid CategoryCreateRequestDTO dto){
+		StopWatch stopWatch = new StopWatch();
+		stopWatch.start();
+		log.info("***** Starting: com.subrutin.catalog.web.CategoryResource.createCategory *****");
+		categoryService.createCategory(dto);
+		stopWatch.stop();
+		log.info("***** Completed: com.subrutin.catalog.web.CategoryResource.createCategory *****"
+				+ "("+stopWatch.getTotalTimeMillis()+")");
+		return ResponseEntity.created(URI.create("/v1/categories")).build();
+	}
+	
+	@LogThisMethod
+	@GetMapping
+	public ResponseEntity<ResultPageResponseDTO<List<CategoryListResponseDTO>>> findCategoryList(
+			@RequestParam(defaultValue = "0") Integer pages,
+			@RequestParam(defaultValue = "10") Integer limit,
+			@RequestParam(defaultValue = "code") String sortBy,
+			@RequestParam(defaultValue = "asc") String direction,
+			@RequestParam(required = false) String categoryName){
+		return ResponseEntity.ok(categoryService.findCategoryList(pages, limit, sortBy, direction, categoryName));
+	}
+	
+	@GetMapping("{code}")
+	public ResponseEntity<CategoryDetailResponseDTO> findCategoryDetail(@PathVariable String code){
+		return ResponseEntity.ok(categoryService.findCategoryDetail(code));
+	}
+	
+	@PutMapping("{code}")
+	public ResponseEntity<Void> updateCategory(@PathVariable String code, @RequestBody @Valid CategoryUpdateRequestDTO dto){
+		categoryService.updateCategory(code, dto);
+		return ResponseEntity.ok().build();
+	}
+	
+	@DeleteMapping("{code}")
+	public ResponseEntity<Void> deleteCategory(@PathVariable String code){
+		categoryService.deleteCategory(code);
+		return ResponseEntity.noContent().build();
+	}
+	
+	
+
+}

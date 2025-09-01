@@ -1,5 +1,8 @@
 package com.subrutin.service;
 
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+
 import jakarta.mail.Message;
 import jakarta.mail.Multipart;
 import jakarta.mail.Session;
@@ -9,20 +12,15 @@ import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 
+@Service
 public class EmailService {
 	
 	private final Session session;
-	
-	
-
 	
 	 public EmailService(Session session) {
 		super();
 		this.session = session;
 	}
-
-
-
 
 	public void sendMail(String destinationAddress, String mailSubject, String messageContent) throws Exception {
 

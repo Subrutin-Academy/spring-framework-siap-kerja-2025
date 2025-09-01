@@ -1,0 +1,29 @@
+package com.subrutin.catalog.web;
+
+import java.net.URI;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.subrutin.catalog.dto.AuthorCreateRequestDTO;
+import com.subrutin.catalog.service.AuthorService;
+
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+@RestController 
+@RequestMapping("/v1/authors")
+public class AuthorResource {
+	
+	private final AuthorService authorService;
+	
+	@PostMapping
+	public ResponseEntity<Void> createAuthor(@RequestBody AuthorCreateRequestDTO dto){
+		authorService.createAuthor(dto);
+		return ResponseEntity.created(URI.create("/v1/authors")).build();
+	}
+
+}

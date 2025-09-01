@@ -1,0 +1,57 @@
+# Conversion to YAML from Properties formar report
+# Warnings:
+# - The yaml file had comments which are lost in the refactoring!
+spring:
+  application:
+    name: book-catalog-v2
+  datasource:
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      maximum-pool-size: 10
+    url: jdbc:postgresql://localhost/book_catalog
+    username: subrutin
+    password: subrutin
+  jpa:
+    database: POSTGRESQL
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect 
+    show-sql: true
+server:
+  port: 8081
+app:
+  welcome-text: Hello World from Belajar Spring Boot Sampai Siap Kerja
+  currency: IDR
+  timezone: Asia/Jakarta
+logging:
+  level:
+    com:
+      subrutin:
+        catalog: INFO
+---
+spring:
+  config:
+    activate:
+      on-profile: development
+
+---
+spring:
+  config:
+    activate:
+      on-profile: staging
+app:
+  welcome-text: Hello World from Staging
+  currency: JPY
+
+---
+spring:
+  config:
+    activate:
+      on-profile: production
+app:
+  welcome-text: ${WELCOME_TEXT}
+  currency: ${CURRENCY}
